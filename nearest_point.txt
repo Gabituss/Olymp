@@ -1,0 +1,85 @@
+ 
+int res_sq;
+double res;
+
+struct point {
+	int x, y;
+};
+
+int dist_sq(point a, point b) {
+	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+}
+
+int hash_point(point a) {
+	return (a.x * 76543) + a.y;
+}
+
+point get_coords(point a) {
+	int xm = a.x % (int)res, ym = a.y % (int)res;
+
+	if (xm < 0) xm += res;
+	if (ym < 0) ym += res;
+
+	return {(a.x - xm) / (int)res, (a.y - ym) / (int)res};
+}
+
+int gets(point a) {
+	return hash_point(get_coords(a));
+}
+
+mt19937 gen(1239);
+
+signed main() {
+#ifdef LOCAL
+	freopen("input.txt", "r", stdin);
+	freopen("output.txt", "w", stdout);
+#else
+	ios_base::sync_with_stdio(false);
+      cin.tie(nullptr);
+#endif
+	int n;
+	cin >> n;
+	vector<point> a(n);
+	for (int i = 0; i < n; ++i) cin >> a[i].x >> a[i].y;
+
+	shuffle(a.begin(), a.end(), gen);
+
+	unordered_map<int, vector<point>> m;
+	res_sq = dist_sq(a[0], a[1]);
+	res = sqrt(res_sq);
+
+	m[gets(a[0])].push_back(a[0]);
+	m[gets(a[1])].push_back(a[1]);
+
+	point p1 = a[0], p2 = a[1];
+
+	for (int i = 2; i < n; ++i) {
+
+		int now_sq = res_sq;
+
+		auto [nowx, nowy] = get_coords(a[i]);
+		for (int x = nowx - 1; x <= nowx + 1; ++x) {
+			for (int y = nowy - 1; y <= nowy + 1; ++y) {
+				for (auto p: m[hash_point({x, y})]) {
+					if (dist_sq(a[i], p) < now_sq) {
+						now_sq = dist_sq(a[i], p);
+						p1 = a[i], p2 = p;
+					}
+				}
+			}
+		}
+
+		if (now_sq < res_sq) {
+			res_sq = now_sq;
+			res = sqrt(res_sq);
+
+			m.clear();
+			for (int j = 0; j < i; ++j)
+				m[gets(a[j])].push_back(a[j]);
+		}
+
+		m[gets(a[i])].push_back(a[i]);
+	}
+
+	cout << p1.x << ' ' << p1.y << '\n' << p2.x << ' ' << p2.y << '\n';
+}

@@ -1,0 +1,226 @@
+ 
+//@formatter:off
+const double eps = 0;
+struct myf {
+	long double x;
+
+	myf(): x(0) {}
+	myf(long double x): x(x) {}
+
+	operator signed() const { return x; }
+	operator long double() const { return x; }
+	operator bool() const { return abs(x) > eps; }
+
+	myf operator+(myf t) const { return x + t.x; }
+	myf operator-(myf t) const { return x - t.x; }
+	myf operator*(myf t) const { return x * t.x; }
+	myf operator/(myf t) const { return x / t.x; }
+
+	template<typename T> myf operator+(T t) const { return x + t; }
+	template<typename T> myf operator-(T t) const { return x - t; }
+	template<typename T> myf operator*(T t) const { return x * t; }
+	template<typename T> myf operator/(T t) const { return x / t; }
+	myf operator++() {
+		x++;
+		return *this;
+	}
+	myf operator++(signed notused) {
+		auto t = *this;
+		x++;
+		return t;
+	}
+	myf operator--() {
+		x--;
+		return *this;
+	}
+	myf operator--(signed notused) {
+		auto t = *this;
+		x--;
+		return t;
+	}
+	myf operator-() const  { return myf(-x); }
+
+	bool operator==(myf t) const { return abs(x - t.x) <= eps; }
+	bool operator!=(myf t) const { return abs(x - t.x) > eps; }
+	bool operator<(myf t) const { return x < t.x and abs(x - t.x) > eps; }
+	bool operator>(myf t) const { return x > t.x and abs(x - t.x) > eps; }
+	bool operator<=(myf t) const { return x < t.x or abs(x - t.x) <= eps; }
+	bool operator>=(myf t) const { return x > t.x or abs(x - t.x) <= eps; }
+
+	template<typename T> bool operator==(T t) const { return abs(x - t) <= eps; }
+	template<typename T> bool operator!=(T t) const { return abs(x - t) > eps; }
+	template<typename T> bool operator<(T t) const { return x < t and abs(x - t) > eps; }
+	template<typename T> bool operator>(T t) const { return x > t and abs(x - t) > eps; }
+	template<typename T> bool operator<=(T t) const { return x < t or abs(x - t) <= eps; }
+	template<typename T> bool operator>=(T t) const { return x > t or abs(x - t) <= eps; }
+
+	myf operator+=(myf t) { return x += t.x; }
+	myf operator-=(myf t) { return x -= t.x; }
+	myf operator*=(myf t) { return x *= t.x; }
+	myf operator/=(myf t) { return x /= t.x; }
+};
+istream &operator>>(istream &is, myf &t) { is >> t.x; return is; }
+ostream &operator<<(ostream &os, myf t) { os << t.x; return os; }
+myf sqrt(myf x) { return sqrt(x.x); }
+myf abs (myf x) { return (x < 0 ? -x : x); }
+
+struct point {
+	myf x, y;
+	point ():                                 x(0), y(0) {}
+	point (myf x, myf y):                     x(x), y(y) {}
+	point (point point1, point point2):       x(point2.x - point1.x), y(point2.y - point1.y) {}
+	point operator+(point t) const { return {x + t.x, y + t.y}; }
+	point operator-(point t) const { return {x - t.x, y - t.y}; }
+	myf operator*(point t) const { return x * t.x + y * t.y; }
+	myf operator%(point t) const { return x * t.y - y * t.x; }
+	bool operator==(point t) const { return x == t.x and y == t.y; }
+};
+istream &operator>>(istream &is, point &t) { is >> t.x >> t.y; return is; }
+ostream &operator<<(ostream &os, point t) { os << t.x << ' ' << t.y << '\n'; return os; }
+struct segment {
+	point a, b;
+	segment():                                a({0, 0}), b({0, 0}) {}
+	segment(point point1, point point2):      a(point1), b(point2) {}
+	segment(myf x1, myf y1, myf x2, myf y2):  a({x1, y1}), b({x2, y2}) {}
+};
+
+struct ray {
+	point a, b;
+	ray():                                    a({0, 0}), b({0, 0}) {}
+	ray(point point1, point point2):          a(point1), b(point2) {}
+	ray(myf x1, myf y1, myf x2, myf y2):      a({x1, y1}), b({x2, y2}) {}
+};
+
+struct line {
+	myf a, b, c;
+	line ():                                  a(1), b(0), c(0) {}
+	line (myf a, myf b, myf c):               a(a), b(b), c(c) {}
+	line (point point1, point point2):        a(point2.y - point1.y), b(point1.x - point2.x), c(-((point2.y - point1.y) * point1.x + (point1.x - point2.x) * point1.y)) {}
+	line (segment s):                         a(s.b.y - s.a.y), b(s.a.x - s.b.x), c(-((s.b.y - s.a.y) * s.a.x + (s.a.x - s.b.x) * s.a.y)) {}
+	line (ray r):                             a(r.b.y - r.a.y), b(r.a.x - r.b.x), c(-((r.b.y - r.a.y) * r.a.x + (r.a.x - r.b.x) * r.a.y)) {}
+};
+
+const point NOTH = {1234567.7654321, 1234567.7654321};
+
+bool is_on(point p, segment s) {
+	return min(s.a.x, s.b.x) <= p.x and p.x <= max(s.a.x, s.b.x)
+	and min(s.a.y, s.b.y) <= p.y and p.y <= max(s.a.y, s.b.y);
+}
+
+bool is_on(point p, ray r) {
+	if (r.a.x <= r.b.x) {
+		if (p.x < r.a.x) return false;
+	} else if (r.a.x < p.x) return false;
+
+	if (r.a.y <= r.b.y) {
+		if (p.y < r.a.y) return false;
+	} else if (r.a.y < p.y) return false;
+
+	return true;
+}
+
+point cross(line a, line b) {
+	myf a1 = a.a, b1 = a.b, c1 = a.c, a2 = b.a, b2 = b.b, c2 = b.c;
+	if (a1 * b2 == a2 * b1) return NOTH;
+	if (a1) {
+		myf y = (a2 * c1 - a1 * c2) / (a1 * b2 - a2 * b1);
+		return {(-c1 - b1 * y) / a1, y};
+	} else {
+		myf y = (a1 * c2 - a2 * c1) / (a2 * b1 - a1 * b2);
+		return {(-c2 - b2 * y) / a2, y};
+	}
+}
+
+bool is_intersects(segment s1, segment s2) {
+	point o = cross(s1, s2);
+	if (o == NOTH) return false;
+	point a = s1.a, b = s1.b, c = s2.a, d = s2.b;
+
+	return is_on(o, s1) and is_on(o, s2);
+}
+bool is_intersects(segment s, ray r) {
+	point o = cross(s, r);
+	if (o == NOTH) return false;
+
+	return is_on(o, s) and is_on(o, r);
+}
+bool is_intersects(segment s, line l) {
+	point o = cross(s, l);
+	if (o == NOTH) return false;
+	return is_on(o, s);
+}
+bool is_intersects(ray r1, ray r2) {
+	point o = cross(r1, r2);
+	if (o == NOTH) return false;
+
+	return is_on(o, r1) and is_on(o, r2);
+}
+bool is_intersects(ray r, line l) {
+	point o = cross(r, l);
+	if (o == NOTH) return false;
+
+	return is_on(o, r);
+}
+bool is_intersects(line l1, line l2) {
+	point o = cross(l1, l2);
+	if (o == NOTH) return false;
+	return true;
+}
+myf dist(point p1, point p2) { return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)); }
+myf dist(point p, line l) {
+	return abs((l.a * p.x + l.b * p.y + l.c) / sqrt(l.a * l.a + l.b * l.b));
+}
+myf dist(point p, segment s) {
+	point a = s.a, b = s.b;
+	point ab(a, b), ap(a, p), ba(b, a), bp(b, p);
+
+	myf ans = min(dist(a, p), dist(b, p));
+	if (ab * ap >= 0 and ba * bp >= 0) ans = min(ans, dist(p, line(s)));
+	return ans;
+}
+myf dist(point p, ray r) {
+	point a = r.a, b = r.b;
+	point ab(a, b), ap(a, p);
+
+	myf ans = dist(p, a);
+	if (ab * ap >= 0) ans = min(ans, dist(p, line(r)));
+	return ans;
+}
+myf dist(segment s1, segment s2) {
+	point a = s1.a, b = s1.b, c = s2.a, d = s2.b;
+	if (is_intersects(s1, s2)) return 0;
+	return min({
+		dist(a, s2), dist(b, s2),
+		dist(c, s1), dist(d, s1)
+	});
+}
+myf dist(segment s, ray r) {
+	point a = s.a, b = s.b, c = r.a, d = r.b;
+	if (is_intersects(s, r)) return 0;
+	return min({
+		dist(a, r), dist(b, r),
+		dist(c, s)
+	});
+}
+myf dist(segment s, line l) {
+	if (is_intersects(s, l)) return 0;
+	return min(dist(s.a, l), dist(s.b, l));
+}
+myf dist(ray r1, ray r2) {
+	if (is_intersects(r1, r2)) return 0;
+	return min(dist(r1.a, r2), dist(r2.a, r1));
+}
+myf dist(ray r, line l) {
+	if (is_intersects(r, l)) return 0;
+	return dist(r.a, l);
+}
+myf dist(line l1, line l2) {
+	if (is_intersects(l1, l2)) return 0;
+	if (l1.b == 0) {
+		myf x = -l1.c / l1.a;
+		return dist({x, 0}, l2);
+	} else {
+		myf y = -l1.c / l1.b;
+		return dist({0, y}, l2);
+	}
+}

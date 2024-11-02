@@ -1,0 +1,112 @@
+ 
+import math
+
+
+class Matrix:
+    def __init__(self, n, m, matrix=None):
+        self.n = n
+        self.m = m
+        self.matrix = (matrix if matrix is not None else [[0.0 for j in range(m)] for i in range(n)])
+
+    def read(self):
+        for i in range(self.n):
+            self.matrix[i] = list(map(float, input().split()))
+
+    def __mul__(self, other):
+        res_n = self.n
+        res_m = other.m
+        result = Matrix(res_n, res_m)
+        for i in range(res_n):
+            for j in range(res_m):
+                total = 0
+                for ind in range(self.m):
+                    total += self.matrix[i][ind] * other.matrix[ind][j]
+                result.matrix[i][j] = total
+        return result
+
+    def divide(self, v: float):
+        result = Matrix(self.n, self.m)
+        for i in range(self.n):
+            for j in range(self.m):
+                result.matrix[i][j] = self.matrix[i][j] / v
+        return result
+
+    def multiply(self, v: float):
+        result = Matrix(self.n, self.m)
+        for i in range(self.n):
+            for j in range(self.m):
+                result.matrix[i][j] = self.matrix[i][j] * v
+        return result
+
+    def transpose(self):
+        result = Matrix(self.m, self.n)
+        for i in range(self.n):
+            for j in range(self.m):
+                result.matrix[j][i] = self.matrix[i][j]
+        return result
+
+    def softmax(self):
+        result = Matrix(self.n, self.m)
+        for i in range(self.n):
+            mx = max(self.matrix[i])
+            total = sum(map(lambda x: math.exp(x - mx), self.matrix[i]))
+            result.matrix[i] = list(map(lambda x: math.exp(x - mx) / total, self.matrix[i]))
+
+        return result
+
+    def ReLU(self):
+        result = Matrix(self.n, self.m)
+        for i in range(self.n):
+            for j in range(self.m):
+                result.matrix[i][j] = max(0.0, self.matrix[i][j])
+        return result
+
+    def leaky_ReLU(self, a):
+        result = Matrix(self.n, self.m)
+        for i in range(self.n):
+            for j in range(self.m):
+                if self.matrix[i][j] < 0:
+                    result.matrix[i][j] = a * self.matrix[i][j]
+                else:
+                    result.matrix[i][j] = self.matrix[i][j]
+        return result
+
+    def sigmoid(self):
+        result = Matrix(self.n, self.m)
+        for i in range(self.n):
+            for j in range(self.m):
+                result.matrix[i][j] = 1.0 / (1 + math.exp(-self.matrix[i][j]))
+        return result
+
+    def tanh(self):
+        result = Matrix(self.n, self.m)
+        for i in range(self.n):
+            for j in range(self.m):
+                result.matrix[i][j] = (
+                        (math.exp(self.matrix[i][j]) - math.exp(-self.matrix[i][j])) / (
+                        math.exp(self.matrix[i][j]) + math.exp(-self.matrix[i][j]))
+                )
+        return result
+
+    def __str__(self):
+        result = ""
+        for i in range(self.n):
+            for j in range(self.m):
+                result += f"{self.matrix[i][j]} "
+            result += "\n"
+        return result
+
+
+n, m, dk = map(int, input().split())
+
+Q = Matrix(n, dk)
+Q.read()
+K = Matrix(m, dk)
+K.read()
+
+dv = int(input())
+
+V = Matrix(m, dv)
+V.read()
+
+print((Q * K.transpose().divide(dk ** 0.5)).softmax() * V)
